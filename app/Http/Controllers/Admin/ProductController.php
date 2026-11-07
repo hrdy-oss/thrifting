@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -13,13 +15,97 @@ use Illuminate\View\View;
 class ProductController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display the active inventory.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $products = Product::query()->latest()->paginate(15);
+        return $this->productListing(
+            $request,
+            'admin.products.index',
+            fn (Builder $query): Builder => $query->where('is_published', true),
+        );
+    }
 
-        return view('admin.products.index', compact('products'));
+    /**
+     * Display the products marked as upcoming.
+     */
+    public function upcoming(Request $request): View
+    {
+        return $this->productListing(
+            $request,
+            'admin.products.upcoming',
+            fn (Builder $query): Builder => $query->where('is_upcoming', true),
+        );
+    }
+
+    /**
+     * Display the archived (unpublished) products.
+     */
+    public function archived(Request $request): View
+    {
+        return $this->productListing(
+            $request,
+            'admin.products.archived',
+            fn (Builder $query): Builder => $query->where('is_published', false),
+        );
+    }
+
+    /**
+     * Toggle a published product between the live catalog and the upcoming drop.
+     */
+    public function toggleUpcoming(Product $product): RedirectResponse
+    {
+        if (! $product->is_published) {
+            return back()->with('error', 'Produk arsip tidak bisa ditandai upcoming. Pulihkan dulu.');
+        }
+
+        $product->update(['is_upcoming' => ! $product->is_upcoming]);
+
+        return back()->with('success', $product->is_upcoming
+            ? 'Produk ditandai sebagai upcoming.'
+            : 'Produk dikeluarkan dari daftar upcoming.');
+    }
+
+    /**
+     * Restore an archived product back into the inventory.
+     */
+    public function restore(Product $product): RedirectResponse
+    {
+        if ($product->is_published) {
+            return back()->with('error', 'Produk ini sudah aktif.');
+        }
+
+        $stock = max(1, (int) $product->stock);
+        $product->update(['is_published' => true, 'stock' => $stock]);
+
+        return back()->with('success', 'Produk dipulihkan dengan stok '.$stock.'. Sesuaikan stok bila perlu.');
+    }
+
+    /**
+     * Render one of the product listings with shared search, filter, and counters.
+     *
+     * @param  Closure(Builder): Builder  $scope
+     */
+    private function productListing(Request $request, string $view, Closure $scope): View
+    {
+        $products = $scope(Product::query())
+            ->when($request->filled('q'), function (Builder $query) use ($request): void {
+                $term = '%'.$request->string('q')->toString().'%';
+                $query->where(fn (Builder $inner) => $inner->where('title', 'like', $term)->orWhere('sku', 'like', $term));
+            })
+            ->when($request->filled('category'), fn (Builder $query) => $query->where('category', $request->string('category')->toString()))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        $categories = Product::query()->distinct()->orderBy('category')->pluck('category');
+        $counts = [
+            'inventory' => Product::query()->where('is_published', true)->count(),
+            'upcoming' => Product::query()->where('is_upcoming', true)->count(),
+            'archived' => Product::query()->where('is_published', false)->count(),
+        ];
+
+        return view($view, compact('products', 'categories', 'counts'));
     }
 
     /**
@@ -40,6 +126,7 @@ class ProductController extends Controller
         $validated['sku'] = Str::upper($validated['sku']);
         $validated['is_featured'] = $request->boolean('is_featured');
         $validated['is_published'] = $request->boolean('is_published');
+        $validated['is_upcoming'] = $request->boolean('is_upcoming');
         $validated['measurements'] = array_filter([
             'pit_to_pit' => $validated['pit_to_pit'] ?? null,
             'length' => $validated['length'] ?? null,
@@ -76,6 +163,7 @@ class ProductController extends Controller
         $validated['sku'] = Str::upper($validated['sku']);
         $validated['is_featured'] = $request->boolean('is_featured');
         $validated['is_published'] = $request->boolean('is_published');
+        $validated['is_upcoming'] = $request->boolean('is_upcoming');
         $validated['measurements'] = array_filter([
             'pit_to_pit' => $validated['pit_to_pit'] ?? null,
             'length' => $validated['length'] ?? null,
@@ -88,11 +176,11 @@ class ProductController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Archive the specified product.
      */
     public function destroy(Product $product): RedirectResponse
     {
-        $product->update(['is_published' => false, 'stock' => 0]);
+        $product->update(['is_published' => false, 'is_upcoming' => false, 'stock' => 0]);
 
         return redirect()->route('admin.products.index')->with('success', 'Produk diarsipkan. Riwayat pesanan tetap tersimpan.');
     }

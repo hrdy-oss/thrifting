@@ -25,7 +25,7 @@ class CheckoutController extends Controller
      */
     public function direct(Product $product): RedirectResponse
     {
-        if (! $product->is_published || $product->stock < 1) {
+        if (! $product->is_published || $product->is_upcoming || $product->stock < 1) {
             return back()->withErrors(['cart' => 'Barang ini sudah tidak tersedia.']);
         }
 
@@ -69,7 +69,7 @@ class CheckoutController extends Controller
 
         $order = DB::transaction(function () use ($cart, $validated): Order {
             $products = Product::query()->whereIn('id', $cart->keys())->lockForUpdate()->get();
-            if ($products->count() !== $cart->count() || $products->contains(fn (Product $product): bool => ! $product->is_published || $product->stock < 1)) {
+            if ($products->count() !== $cart->count() || $products->contains(fn (Product $product): bool => ! $product->is_published || $product->is_upcoming || $product->stock < 1)) {
                 throw ValidationException::withMessages(['cart' => 'Ada barang yang sudah tidak tersedia. Periksa kembali keranjang kamu.']);
             }
 

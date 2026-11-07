@@ -21,9 +21,11 @@
                 </button>
             </div>
             <nav>
-                <a href="{{ route('admin.dashboard') }}">▦　DASHBOARD</a>
-                <a href="{{ route('admin.products.index') }}">▣　INVENTORY & CATALOG</a>
-                <a href="{{ route('admin.orders.index') }}">▤　SALES & ORDERS</a>
+                <a class="{{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}" href="{{ route('admin.dashboard') }}">▦　DASHBOARD</a>
+                <a class="{{ request()->routeIs('admin.products.index', 'admin.products.create', 'admin.products.edit') ? 'is-active' : '' }}" href="{{ route('admin.products.index') }}">▣　INVENTORY & CATALOG</a>
+                <a class="{{ request()->routeIs('admin.products.upcoming') ? 'is-active' : '' }}" href="{{ route('admin.products.upcoming') }}">◈　UPCOMING</a>
+                <a class="{{ request()->routeIs('admin.products.archived') ? 'is-active' : '' }}" href="{{ route('admin.products.archived') }}">▤　ARSIP</a>
+                <a class="{{ request()->routeIs('admin.orders.*') ? 'is-active' : '' }}" href="{{ route('admin.orders.index') }}">▥　SALES & ORDERS</a>
                 <a href="{{ route('home') }}" target="_blank">↗　LIHAT TOKO</a>
             </nav>
             <form method="POST" action="{{ route('admin.logout') }}">@csrf<button class="admin-logout">LOG OUT</button></form>
@@ -43,6 +45,7 @@
             </div>
         </header>
         @if (session('success'))<div class="notice">{{ session('success') }}</div>@endif
+        @if (session('error'))<div class="notice notice-error">{{ session('error') }}</div>@endif
         @if ($errors->any())<div class="notice notice-error">{{ $errors->first() }}</div>@endif
         <div class="admin-content">@yield('content')</div>
     </main>

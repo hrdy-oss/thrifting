@@ -14,7 +14,7 @@ class Product extends Model
     protected $fillable = [
         'title', 'slug', 'sku', 'description', 'category', 'price', 'compare_at_price',
         'size', 'condition_score', 'condition_notes', 'image_url', 'gallery', 'era',
-        'measurements', 'stock', 'is_featured', 'is_published',
+        'measurements', 'stock', 'is_featured', 'is_published', 'is_upcoming',
     ];
 
     protected function casts(): array
@@ -24,6 +24,7 @@ class Product extends Model
             'measurements' => 'array',
             'is_featured' => 'boolean',
             'is_published' => 'boolean',
+            'is_upcoming' => 'boolean',
             'condition_score' => 'decimal:1',
         ];
     }

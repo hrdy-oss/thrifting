@@ -12,29 +12,36 @@ class StorefrontController extends Controller
 {
     public function index(): View
     {
-        $products = Product::query()->where('is_published', true)->where('stock', '>', 0)->latest()->limit(8)->get();
-        $featuredProducts = Product::query()->where('is_published', true)->where('stock', '>', 0)
+        $products = Product::query()->where('is_published', true)->where('is_upcoming', false)->where('stock', '>', 0)->latest()->limit(8)->get();
+        $featuredProducts = Product::query()->where('is_published', true)->where('is_upcoming', false)->where('stock', '>', 0)
             ->where('is_featured', true)->latest()->limit(4)->get();
         $categories = $this->categoryTiles();
 
         return view('storefront.home', compact('products', 'featuredProducts', 'categories'));
     }
 
+    public function upcoming(): View
+    {
+        $products = Product::query()->where('is_upcoming', true)->latest()->paginate(12);
+
+        return view('storefront.upcoming', compact('products'));
+    }
+
     public function catalog(Request $request): View
     {
-        $products = Product::query()->where('is_published', true)->where('stock', '>', 0)
+        $products = Product::query()->where('is_published', true)->where('is_upcoming', false)->where('stock', '>', 0)
             ->when($request->filled('category'), fn ($query) => $query->where('category', $request->string('category')->toString()))
             ->when($request->filled('q'), fn ($query) => $query->where('title', 'like', '%'.$request->string('q')->toString().'%'))
             ->latest()->paginate(12)->withQueryString();
-        $categories = Product::query()->where('is_published', true)->distinct()->orderBy('category')->pluck('category');
+        $categories = Product::query()->where('is_published', true)->where('is_upcoming', false)->distinct()->orderBy('category')->pluck('category');
 
         return view('storefront.catalog', compact('products', 'categories'));
     }
 
     public function show(Product $product): View
     {
-        abort_unless($product->is_published && $product->stock > 0, 404);
-        $relatedProducts = Product::query()->where('is_published', true)->where('stock', '>', 0)
+        abort_unless($product->is_upcoming || ($product->is_published && $product->stock > 0), 404);
+        $relatedProducts = Product::query()->where('is_published', true)->where('is_upcoming', false)->where('stock', '>', 0)
             ->where('category', $product->category)->whereKeyNot($product->getKey())->limit(4)->get();
 
         return view('storefront.product', compact('product', 'relatedProducts'));

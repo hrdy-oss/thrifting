@@ -21,7 +21,7 @@ class CartController extends Controller
 
     public function store(Product $product): RedirectResponse
     {
-        if (! $product->is_published || $product->stock < 1) {
+        if (! $product->is_published || $product->is_upcoming || $product->stock < 1) {
             return back()->withErrors(['cart' => 'Barang ini sudah tidak tersedia.']);
         }
 
