@@ -19,6 +19,7 @@ Route::post('/cart/{product}', [CartController::class, 'store'])->name('cart.sto
 Route::delete('/cart/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
 Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.create');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/checkout/{product}', [CheckoutController::class, 'direct'])->name('checkout.direct');
 Route::get('/orders/track/{token}', [OrderTrackingController::class, 'show'])->name('orders.track');
 Route::get('/admin/login', [AdminAuthController::class, 'create'])->name('admin.login');
 Route::post('/admin/login', [AdminAuthController::class, 'store'])->middleware('throttle:5,1')->name('admin.login.store');

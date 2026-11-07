@@ -12,9 +12,27 @@ if (reducedMotionPreference.matches || !('IntersectionObserver' in window)) {
 } else {
     document.documentElement.classList.add('reveal-enabled');
 
+    let isScrollingDown = true;
+    let previousScrollY = window.scrollY;
+
+    window.addEventListener('scroll', () => {
+        const currentScrollY = window.scrollY;
+
+        if (currentScrollY === previousScrollY) {
+            return;
+        }
+
+        isScrollingDown = currentScrollY > previousScrollY;
+        previousScrollY = currentScrollY;
+    }, { passive: true });
+
     const revealObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach((entry) => {
             if (entry.isIntersecting) {
+                if (!isScrollingDown) {
+                    entry.target.classList.add('reveal-from-top');
+                }
+
                 entry.target.classList.add('is-visible');
                 observer.unobserve(entry.target);
             }

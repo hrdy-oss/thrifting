@@ -10,6 +10,8 @@ class CartController extends Controller
 {
     public function index(): View
     {
+        session()->forget(CheckoutController::BUY_NOW_KEY);
+
         $cart = collect(session('cart', []));
         $products = Product::query()->whereIn('id', $cart->keys())->get()->keyBy('id');
         $subtotal = $products->sum('price');
