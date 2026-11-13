@@ -3,11 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#101010">
+    <meta name="theme-color" content="#111111">
     <title>@yield('title', 'Admin — NEON')</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="admin-page">
@@ -49,5 +51,22 @@
         @if ($errors->any())<div class="notice notice-error">{{ $errors->first() }}</div>@endif
         <div class="admin-content">@yield('content')</div>
     </main>
+    <div class="camera-modal" data-camera-modal hidden>
+        <div class="camera-modal-backdrop" data-camera-close></div>
+        <div class="camera-modal-panel" role="dialog" aria-modal="true" aria-label="Ambil foto dari kamera">
+            <div class="camera-modal-head">
+                <strong>AMBIL FOTO</strong>
+                <button class="camera-modal-close" type="button" aria-label="Tutup kamera" data-camera-close>×</button>
+            </div>
+            <div class="camera-modal-stage">
+                <video data-camera-video playsinline autoplay muted></video>
+            </div>
+            <p class="camera-modal-status" data-camera-status>Izinkan akses kamera untuk mulai memotret.</p>
+            <div class="camera-modal-actions">
+                <button class="button button-dark" type="button" data-camera-capture disabled>AMBIL FOTO</button>
+                <button class="button button-outline" type="button" data-camera-close>BATAL</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -3,11 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#101010">
+    <meta name="theme-color" content="#111111">
     <title>Admin Login — NEON</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="login-page">
@@ -15,11 +17,8 @@
         <section class="login-brand">
             <div class="login-brand-content">
                 <p class="login-welcome">Welcome to</p>
-                <span class="login-logo" aria-hidden="true">
-                    <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M32 23v-3a6.5 6.5 0 1 1 6.5-6.5"/>
-                        <path d="M32 23 7.8 41.2c-1.8 1.4-.9 4.2 1.4 4.2h45.6c2.3 0 3.2-2.8 1.4-4.2L32 23Z"/>
-                    </svg>
+                <span class="login-logo">
+                    <img src="{{ asset('images/brand-mark.png') }}" alt="Logo THRIFTPED">
                 </span>
                 <p class="login-brand-name">THRIFTPED</p>
                 <p class="login-brand-copy">Panel kurasi internal untuk mengelola inventaris, pesanan, dan pengiriman THRIFTPED.</p>

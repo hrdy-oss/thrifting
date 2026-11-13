@@ -1,3 +1,6 @@
+import './admin-photo';
+import './product-gallery';
+
 const revealElements = [...document.querySelectorAll('[data-reveal]')];
 const reducedMotionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -43,6 +46,17 @@ if (reducedMotionPreference.matches || !('IntersectionObserver' in window)) {
     });
 
     revealElements.forEach((element) => revealObserver.observe(element));
+}
+
+const siteHeader = document.querySelector('.site-header');
+
+if (siteHeader) {
+    const syncHeaderState = () => {
+        siteHeader.classList.toggle('is-scrolled', window.scrollY > 8);
+    };
+
+    syncHeaderState();
+    window.addEventListener('scroll', syncHeaderState, { passive: true });
 }
 
 const siteDrawer = document.querySelector('[data-site-drawer]');

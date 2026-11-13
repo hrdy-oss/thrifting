@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Product Photo Disk
+    |--------------------------------------------------------------------------
+    |
+    | Product photos uploaded from the admin panel are written to this disk.
+    | Paths are stored relative to the disk, so the same records can serve a
+    | local disk now and an S3-compatible bucket after the files are copied.
+    |
+    */
+
+    'product_photo_disk' => env('PRODUCT_PHOTO_DISK', 'public'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

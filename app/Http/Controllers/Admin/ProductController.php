@@ -8,9 +8,12 @@ use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class ProductController extends Controller
 {
@@ -122,6 +125,7 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validatedProduct($request);
+        $photos = $this->syncPhotos($request);
         $validated['slug'] = Product::createSlug($validated['title']);
         $validated['sku'] = Str::upper($validated['sku']);
         $validated['is_featured'] = $request->boolean('is_featured');
@@ -133,7 +137,18 @@ class ProductController extends Controller
             'shoulder' => $validated['shoulder'] ?? null,
         ]);
         unset($validated['pit_to_pit'], $validated['length'], $validated['shoulder']);
-        Product::create($validated);
+        $validated['image_path'] = $photos['image_path'];
+        $validated['gallery'] = $photos['gallery'];
+
+        try {
+            Product::create($validated);
+        } catch (Throwable $exception) {
+            $this->deletePhotoFiles($photos['stored']);
+
+            throw $exception;
+        }
+
+        $this->deletePhotoFiles($photos['removed']);
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
@@ -160,6 +175,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $this->validatedProduct($request, $product);
+        $photos = $this->syncPhotos($request, $product);
         $validated['sku'] = Str::upper($validated['sku']);
         $validated['is_featured'] = $request->boolean('is_featured');
         $validated['is_published'] = $request->boolean('is_published');
@@ -170,7 +186,18 @@ class ProductController extends Controller
             'shoulder' => $validated['shoulder'] ?? null,
         ]);
         unset($validated['pit_to_pit'], $validated['length'], $validated['shoulder']);
-        $product->update($validated);
+        $validated['image_path'] = $photos['image_path'];
+        $validated['gallery'] = $photos['gallery'];
+
+        try {
+            $product->update($validated);
+        } catch (Throwable $exception) {
+            $this->deletePhotoFiles($photos['stored']);
+
+            throw $exception;
+        }
+
+        $this->deletePhotoFiles($photos['removed']);
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
     }
@@ -183,6 +210,122 @@ class ProductController extends Controller
         $product->update(['is_published' => false, 'is_upcoming' => false, 'stock' => 0]);
 
         return redirect()->route('admin.products.index')->with('success', 'Produk diarsipkan. Riwayat pesanan tetap tersimpan.');
+    }
+
+    /**
+     * Persist the uploaded main photo and gallery, returning the model attributes
+     * plus the files that should be cleaned up after a successful save.
+     *
+     * @return array{image_path: string|null, gallery: array<int, string>, stored: array<int, string>, removed: array<int, string>}
+     */
+    private function syncPhotos(Request $request, ?Product $product = null): array
+    {
+        $photos = $this->validatedPhotos($request);
+        $disk = config('filesystems.product_photo_disk');
+        $stored = [];
+        $removed = [];
+        $imagePath = $product?->image_path;
+        $gallery = array_values(array_filter(
+            $product?->gallery ?? [],
+            fn (mixed $item): bool => is_string($item) && trim($item) !== '',
+        ));
+
+        if ($photos['image'] instanceof UploadedFile) {
+            $imagePath = $photos['image']->store('products', $disk);
+            $stored[] = $imagePath;
+
+            if ($product?->image_path) {
+                $removed[] = $product->image_path;
+            }
+        } elseif ($photos['remove_image']) {
+            if ($product?->image_path) {
+                $removed[] = $product->image_path;
+            }
+
+            $imagePath = null;
+        }
+
+        if ($product !== null && $photos['gallery_manage']) {
+            $kept = array_values(array_intersect($gallery, $photos['gallery_keep']));
+            $removed = array_merge($removed, array_values(array_diff($gallery, $kept)));
+            $gallery = $kept;
+        }
+
+        foreach ($photos['gallery_files'] as $file) {
+            $path = $file->store('products', $disk);
+            $stored[] = $path;
+            $gallery[] = $path;
+        }
+
+        foreach ($photos['gallery_urls'] as $url) {
+            $gallery[] = trim($url);
+        }
+
+        $gallery = array_slice(array_values(array_unique($gallery)), 0, Product::MAX_GALLERY_PHOTOS);
+
+        $retained = $imagePath === null ? $gallery : [...$gallery, $imagePath];
+
+        $this->deletePhotoFiles(array_diff($stored, $retained));
+        $stored = array_values(array_intersect($stored, $retained));
+
+        return [
+            'image_path' => $imagePath,
+            'gallery' => $gallery,
+            'stored' => $stored,
+            'removed' => array_values(array_unique($removed)),
+        ];
+    }
+
+    /**
+     * @return array{image: UploadedFile|null, remove_image: bool, gallery_manage: bool, gallery_keep: array<int, string>, gallery_urls: array<int, string>, gallery_files: array<int, UploadedFile>}
+     */
+    private function validatedPhotos(Request $request): array
+    {
+        $validated = $request->validate([
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_image' => ['nullable', 'boolean'],
+            'gallery_manage' => ['nullable', 'boolean'],
+            'gallery_keep' => ['nullable', 'array'],
+            'gallery_keep.*' => ['string', 'max:2000'],
+            'gallery_urls' => ['nullable', 'array', 'max:'.Product::MAX_GALLERY_PHOTOS],
+            'gallery_urls.*' => ['nullable', 'url', 'max:2000'],
+            'gallery_files' => ['nullable', 'array', 'max:'.Product::MAX_GALLERY_PHOTOS],
+            'gallery_files.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        return [
+            'image' => $validated['image'] ?? null,
+            'remove_image' => $request->boolean('remove_image'),
+            'gallery_manage' => $request->boolean('gallery_manage'),
+            'gallery_keep' => array_values($validated['gallery_keep'] ?? []),
+            'gallery_urls' => array_values(array_filter(
+                $validated['gallery_urls'] ?? [],
+                fn (mixed $url): bool => is_string($url) && trim($url) !== '',
+            )),
+            'gallery_files' => array_values($validated['gallery_files'] ?? []),
+        ];
+    }
+
+    /**
+     * Delete only files this application stored on the product photo disk.
+     *
+     * @param  array<int, string|null>  $paths
+     */
+    private function deletePhotoFiles(array $paths): void
+    {
+        $paths = array_values(array_filter(
+            $paths,
+            fn (mixed $path): bool => is_string($path)
+                && str_starts_with($path, 'products/')
+                && ! str_starts_with($path, 'http://')
+                && ! str_starts_with($path, 'https://'),
+        ));
+
+        if ($paths === []) {
+            return;
+        }
+
+        Storage::disk(config('filesystems.product_photo_disk'))->delete($paths);
     }
 
     /**
