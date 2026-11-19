@@ -3,7 +3,7 @@
 @section('title', 'Shop — NEON')
 
 @section('content')
-    <section class="page-shell"><div class="section-heading" data-reveal><div><span class="eyebrow">NEON ARCHIVE / CATALOG</span><h1>ALL THE PIECES</h1></div><span class="eyebrow">{{ $products->total() }} ITEMS</span></div>
+    <section class="page-shell"><div class="section-heading" data-reveal><div><span class="eyebrow">CATALOG</span><h1>ALL THE PIECES</h1></div><span class="eyebrow">{{ $products->total() }} ITEMS</span></div>
         <form class="catalog-filters" method="GET" action="{{ route('products.index') }}">
             <input name="q" value="{{ request('q') }}" placeholder="Cari item, era, atau ukuran" autocomplete="off">
             <select name="category">

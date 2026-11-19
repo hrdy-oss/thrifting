@@ -15,7 +15,16 @@ class Order extends Model
         'user_id', 'order_number', 'tracking_token', 'customer_name', 'customer_email',
         'customer_phone', 'shipping_address', 'city', 'province', 'postal_code', 'courier',
         'tracking_number', 'subtotal', 'shipping_cost', 'discount', 'total', 'status', 'notes',
+        'payment_gateway', 'payment_status', 'payment_reference', 'payment_url',
+        'payment_method', 'midtrans_transaction_id', 'paid_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'paid_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {

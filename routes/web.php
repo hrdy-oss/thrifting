@@ -6,7 +6,9 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\MidtransNotificationController;
 use App\Http\Controllers\OrderTrackingController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Middleware\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +24,9 @@ Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.c
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::post('/checkout/{product}', [CheckoutController::class, 'direct'])->name('checkout.direct');
 Route::get('/orders/track/{token}', [OrderTrackingController::class, 'show'])->name('orders.track');
+Route::post('/orders/{token}/pay', [PaymentController::class, 'pay'])->name('orders.pay');
+Route::post('/orders/{token}/payment/sync', [PaymentController::class, 'sync'])->name('orders.pay.sync');
+Route::post('/midtrans/notification', MidtransNotificationController::class)->name('midtrans.notification');
 Route::get('/login/admin', [AdminAuthController::class, 'create'])->name('admin.login');
 Route::post('/login/admin', [AdminAuthController::class, 'store'])->middleware('throttle:5,1')->name('admin.login.store');
 Route::middleware(['auth', EnsureAdmin::class])->prefix('admin')->name('admin.')->group(function (): void {

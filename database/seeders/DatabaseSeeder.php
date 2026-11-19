@@ -16,8 +16,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(ProductSeeder::class);
-
         if (config('admin.email') && config('admin.password')) {
             User::query()->updateOrCreate(
                 ['email' => config('admin.email')],

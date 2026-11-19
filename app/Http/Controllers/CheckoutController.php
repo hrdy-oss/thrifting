@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderEvent;
 use App\Models\Product;
+use App\Services\MidtransService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class CheckoutController extends Controller
 {
@@ -48,7 +50,7 @@ class CheckoutController extends Controller
         return view('storefront.checkout', compact('products', 'subtotal', 'isBuyNow'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, MidtransService $midtrans): RedirectResponse
     {
         $validated = $request->validate([
             'customer_name' => ['required', 'string', 'max:120'],
@@ -99,7 +101,7 @@ class CheckoutController extends Controller
             OrderEvent::create([
                 'order_id' => $order->id,
                 'status' => 'awaiting_payment',
-                'description' => 'Pesanan dibuat. Pembayaran belum dikonfigurasi.',
+                'description' => 'Pesanan dibuat. Menunggu pembayaran.',
             ]);
 
             return $order;
@@ -107,8 +109,25 @@ class CheckoutController extends Controller
 
         session()->forget($isBuyNow ? self::BUY_NOW_KEY : 'cart');
 
-        return redirect()->route('orders.track', $order->tracking_token)
-            ->with('success', 'Pesanan berhasil dibuat. Simpan tautan ini untuk memeriksa statusnya.');
+        if (! $midtrans->isConfigured()) {
+            return redirect()->route('orders.track', $order->tracking_token)
+                ->with('success', 'Pesanan berhasil dibuat. Pembayaran Midtrans belum dikonfigurasi, hubungi admin toko.');
+        }
+
+        try {
+            $midtrans->createSnapTransaction($order);
+
+            return redirect()->away($order->payment_url);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $message = config('app.debug')
+                ? 'Pesanan berhasil dibuat, tetapi halaman pembayaran gagal dibuat: '.$exception->getMessage()
+                : 'Pesanan berhasil dibuat, tetapi halaman pembayaran gagal dibuat. Klik "Bayar Sekarang" untuk mencoba lagi.';
+
+            return redirect()->route('orders.track', $order->tracking_token)
+                ->with('error', $message);
+        }
     }
 
     /**
