@@ -11,10 +11,6 @@ Before relying on a package's API, confirm its installed version:
 - PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
 - JS packages: check `package.json` for the installed versions.
 
-## Skills Activation
-
-This project has domain-specific skills available in `**/skills/**`. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
-
 ## Conventions
 
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
@@ -95,8 +91,10 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # Deployment
 
-- Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-- Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
+- The production target is InfinityFree shared hosting: no SSH, Composer, or Artisan commands on the server.
+- The server must provide PHP 8.3+ (the application requires it), MySQL, and writable `storage/` and `bootstrap/cache/` directories.
+- Upload the contents of `public/` into `htdocs/`, keep the rest of the application outside the document root, and upload `public/build/` from a local `npm run build`.
+- Do not upload `node_modules/`, dev dependencies, tests, logs, or the local SQLite database.
 
 === laravel/core rules ===
 
