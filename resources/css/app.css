@@ -120,8 +120,8 @@ html.reveal-enabled [data-reveal].reveal-from-top.is-visible { animation-name: r
 .hero-copy { padding: 70px 8vw; align-self: center; }
 .hero-copy h1, .page-shell h1, .admin-title h1 { font: 800 clamp(36px, 5vw, 68px)/.98 var(--font-heading); letter-spacing: -.04em; margin: 18px 0; }
 .hero-copy p { max-width: 400px; line-height: 1.6; margin-bottom: 26px; color: var(--color-gray); }
-.hero-image { position: relative; overflow: hidden; min-height: 490px; background: var(--color-light-gray); }
-.hero-image img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
+.hero-image { position: relative; overflow: hidden; min-height: 490px; background: var(--color-offwhite); }
+.hero-image img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #000 18%); mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #000 18%); }
 .eyebrow { display: inline-block; font: 500 10px var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--color-gray); }
 .hero-copy .eyebrow { color: var(--color-gray); }
 .hero-copy .accent { color: var(--color-orange); }
@@ -439,6 +439,7 @@ body.has-camera-open { overflow: hidden; }
     .hero-copy { padding: 46px calc(20px + var(--safe-left)) 38px calc(20px + var(--safe-right)); }
     .hero-copy h1 { font-size: clamp(44px, 14vw, 64px); }
     .hero-image { min-height: 0; aspect-ratio: 4 / 3; max-height: 420px; }
+    .hero-image img { -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, #000 16%); mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, #000 16%); }
     .benefits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 18px calc(16px + var(--safe-left)) 18px calc(16px + var(--safe-right)); font-size: 9px; justify-content: start; }
     .section-block, .page-shell { padding: 38px calc(16px + var(--safe-left)) 42px calc(16px + var(--safe-right)); }
     .section-heading { align-items: start; gap: 12px; flex-wrap: wrap; }
